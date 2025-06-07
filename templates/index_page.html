@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>where are you</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+     html, body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #form {
+      padding: 10px;
+      background: #f8f8f8;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    #form input, #form button {
+      padding: 8px;
+      font-size: 1em;
+    }
+
+    #map {
+      flex-grow: 1;
+      width: 100%;
+    }
+
+
+
+  </style>
+
+
+</head>
+<body>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+
+
+
+
+
+    <form id="form">
+
+ 
+     <label for="trainid">Train Number</label>
+     <input type="text" id="trainid" name="trainid" required>
+
+     <button id="get_location" value="1">get out the location</button>
+
+     <button id="volunteer" value="2">volunteer with the location</button>
+     <button id="stop volunteering" value="3">im now out of the train and i will stop volunteering</button>
+
+     <p id="is_there_any_one_give_location_of_this_train"></p>
+
+    </form>
+
+
+</body>
+
+<script>
+
+
+// train number if it 0 so the user dosn't volunteer to give location of any  train 
+let current_train_volunteer="0"
+
+// each user can has a train number that he give its location and another one that he monitor it 
+
+let current_train_monitor="0"
+
+// current user location and it will be updated every second
+let x=0
+let y=0
+
+// object that will be sended to the server if the current train of the user not equal zero with his location 
+let obj2={}
+
+
+
+
+// only one websocket connection for every client and he will send the location from it if he a volunter and get the location from it if he a normal user monitoring a train
+let websocket_connection=new WebSocket ("ws://127.0.0.1:8000/new_connection/");
+
+websocket_connection.onerror = function (error) {
+    console.error("WebSocket error:", error);
+};
+
+
+
+let form=document.getElementById("form")
+
+form.addEventListener("submit",(e)=>{
+
+    e.preventDefault()
+
+    let form_data=new FormData(form)
+
+    let obj=Object.fromEntries(form_data.entries())
+
+
+    submitter=e.submitter.value
+
+
+// the user need to monitor a train
+
+     if (submitter==="1"){
+        current_train_monitor=obj.trainid
+        document.getElementById("is_there_any_one_give_location_of_this_train").textContent=`no one give the location of ${current_train_monitor} train currently :)`
+        document.getElementById("is_there_any_one_give_location_of_this_train").style.color="red"
+
+        
+
+        obj["msg_type"]="2"
+
+        websocket_connection.send(JSON.stringify(obj))
+    }   
+
+
+// the user need to volunter with his location 
+    else if (submitter==="2"){
+        console.log(submitter)
+
+
+        current_train_volunteer=obj.trainid
+
+    }
+
+// the user will go out of the train and will stop giving the location of that train 
+
+
+    else if (submitter==="3"){
+
+        obj["msg_type"]="3"
+
+        current_train_volunteer="0"
+
+        websocket_connection.send(JSON.stringify(obj))
+    }
+
+
+})
+
+
+function getLocation() {
+  if (navigator.geolocation) {
+   navigator.geolocation.watchPosition(showPosition, error, {
+  enableHighAccuracy: true
+});
+  } else {
+    alert("Geolocation not supported.");
+  }
+
+}
+
+function error(){
+
+    console.log("")
+}
+
+function showPosition(position){
+ 
+    let latitude = position.coords.latitude;
+    let longitude = position.coords.longitude;
+
+    x = latitude;
+    y = longitude;
+      
+}
+
+
+// update the location of the volunteer every 1 second and send it to the server 
+function update_location(){
+    setInterval(() => {
+      
+    if (current_train_volunteer!="0"){
+       getLocation()
+
+
+       obj2["x"]=x 
+
+       obj2["y"]=y 
+
+       obj2["trainid"]=current_train_volunteer
+
+       obj2["msg_type"]="1"
+
+
+       json_data=JSON.stringify(obj2)
+
+     websocket_connection.send(json_data)
+}
+      
+
+    }, 1000);
+}
+
+update_location()
+
+
+
+
+// user accept updates to the train that he monitor  and updating the map
+
+websocket_connection.onmessage=function(data){
+    let obj=JSON.parse(data.data)
+
+    if (obj["type"]==="1"){
+
+        // type  one ---> someone sending a update to the location
+
+    document.getElementById("is_there_any_one_give_location_of_this_train").textContent=`a good guy now give location of ${current_train_monitor} train ):`
+
+    document.getElementById("is_there_any_one_give_location_of_this_train").style.color="green"
+    document.getElementById("is_there_any_one_give_location_of_this_train").style.fontSize="15px"
+
+    
+
+
+    let latitude = obj["x"];
+    let longitude = obj["y"];
+
+    updateLocation(latitude, longitude);
+
+
+    }
+
+
+    else if (obj["type"]==="2"){
+
+
+        // type 2 means that some one leave the role of giveing the location
+
+    document.getElementById("is_there_any_one_give_location_of_this_train").textContent=`no one give the updates of that train location :) `
+
+    document.getElementById("is_there_any_one_give_location_of_this_train").style.color="red"
+    document.getElementById("is_there_any_one_give_location_of_this_train").style.fontSize=15
+
+    }
+
+
+      
+}
+
+// 30.4421669728496, 30.91739350674613
+// 30.442116073735647, 30.91740959373493
+// 30.5535412137624, 31.004988393741613
+// 30.46293160484606, 30.93856793606436
+// 30.22251362386368, 31.094421086616062
+// 30.1950908215928, 31.139111177910216
+// 30.181493297980676, 31.204696993719743
+// 30.181038538361893, 31.225373393719632
+// 30.122278974928417, 31.244439632341578
+// 30.062700431530054, 31.245856822548646
+
+  // Initial location
+  let lat = 30.442116073735647;
+  let lng = 30.91740959373493;
+
+  const map = L.map('map').setView([lat, lng], 30);
+
+  // Use OpenStreetMap tiles
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+
+  // Marker
+       const marker =L.marker([lat, lng]).addTo(map).bindPopup("this is the train location.").openPopup();
+  
+       const marker2 =L.marker([30.4421669728496, 30.91739350674613]).addTo(map).bindPopup("this is the kamshous station.");
+       const marker3 =L.marker([30.5535412137624, 31.004988393741613]).addTo(map).bindPopup("this is the shebin station.");
+       const marker4 =L.marker([30.46293160484606, 30.93856793606436]).addTo(map).bindPopup("this is the menouf station.");
+       const marker5 =L.marker([30.22251362386368, 31.094421086616062]).addTo(map).bindPopup("this is the derwa station.");
+       const marker6 =L.marker([ 30.1950908215928, 31.139111177910216]).addTo(map).bindPopup("this is the elkanater station.");
+       const marker7 =L.marker([30.181493297980676, 31.204696993719743]).addTo(map).bindPopup("this is the Qalub El-Bald station.");
+       const marker8 =L.marker([30.181038538361893, 31.225373393719632]).addTo(map).bindPopup("this is the Qalub  station.");
+       const marker9 =L.marker([30.181038538361893, 31.225373393719632]).addTo(map).bindPopup("this is the shobra El-khema  station.");
+       const marker10 =L.marker([30.062700431530054, 31.245856822548646]).addTo(map).bindPopup("this is the cairo  station.");
+
+
+
+
+
+const group = L.featureGroup([ marker2,marker3,marker4,marker5,marker5,marker6,marker7,marker8,marker9,marker10]);    
+map.fitBounds(group.getBounds());
+
+  // Function to update location
+  function updateLocation(latitude,longitude) {
+
+
+    marker.setLatLng([latitude, longitude]);
+    map.panTo([latitude, longitude]);
+    console.log("Sending coords:", latitude, longitude)
+  }
+
+
+
+</script>
+
+
+</html>

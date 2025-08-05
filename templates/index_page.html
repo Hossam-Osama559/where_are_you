@@ -118,7 +118,7 @@ form.addEventListener("submit",(e)=>{
 
      if (submitter==="1"){
         current_train_monitor=obj.trainid
-        document.getElementById("is_there_any_one_give_location_of_this_train").textContent=`no one give the location of ${current_train_monitor} train currently :)`
+        document.getElementById("is_there_any_one_give_location_of_this_train").textContent=`no one give the location of ${current_train_monitor} train currently ):`
         document.getElementById("is_there_any_one_give_location_of_this_train").style.color="red"
 
         
@@ -221,7 +221,7 @@ websocket_connection.onmessage=function(data){
 
         // type  one ---> someone sending a update to the location
 
-    document.getElementById("is_there_any_one_give_location_of_this_train").textContent=`a good guy now give location of ${current_train_monitor} train ):`
+    document.getElementById("is_there_any_one_give_location_of_this_train").textContent=`a good guy now give location of ${current_train_monitor} train :)`
 
     document.getElementById("is_there_any_one_give_location_of_this_train").style.color="green"
     document.getElementById("is_there_any_one_give_location_of_this_train").style.fontSize="15px"

@@ -129,8 +129,20 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+import os
+
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [{
+                "address": (
+                    os.environ.get("REDISHOST", "localhost"),  # fallback for local dev
+                    int(os.environ.get("REDISPORT", 6379))
+                ),
+                "password": os.environ.get("REDISPASSWORD", None),
+                "db": 0,
+            }],
+        },
     },
 }

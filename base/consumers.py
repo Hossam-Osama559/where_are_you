@@ -20,7 +20,7 @@ class handle_new_client(AsyncWebsocketConsumer):
 
         print("new client")
 
-        self.group_name=0
+        self.group_name=""
 
         await self.accept()
     
@@ -95,7 +95,7 @@ class handle_new_client(AsyncWebsocketConsumer):
             self.group_name=0
             await self.channel_layer.group_send(
 
-                f"{obj["trainid"]}",
+                f"{obj['trainid']}",
 
                 {
 

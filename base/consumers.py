@@ -8,6 +8,14 @@ from asgiref.sync import sync_to_async
 class handle_new_client(AsyncWebsocketConsumer):
 
 
+
+    def __init__(self, *args, **kwargs):
+
+
+
+        super().__init__(*args, **kwargs)
+
+
     async def connect(self):
 
         print("new client")
@@ -22,13 +30,20 @@ class handle_new_client(AsyncWebsocketConsumer):
 
         if self.group_name!=0:
 
-            await self.channel_layer.group_discard(
+            await self.channel_layer.group_send(
 
                 self.group_name,
 
-                self.channel_name
+                {
 
-            )
+                "type":"unregister_volunteer"
+
+
+
+                }
+            )   
+
+             
     
 
     async def receive(self,text_data):
@@ -40,7 +55,9 @@ class handle_new_client(AsyncWebsocketConsumer):
         if obj["msg_type"]=="1":
 
             # sending the location to all users that monitoring the same train
-            print(obj["x"])
+            print(obj["x"], "  ",obj["last_x"])
+
+            self.group_name=obj['trainid']
 
             await self.channel_layer.group_send(
                 f"{obj['trainid']}",
@@ -48,6 +65,10 @@ class handle_new_client(AsyncWebsocketConsumer):
                 {
 
                     "type":"updating_location",
+
+                    "last_x":obj["last_x"],
+
+                    "last_y":obj["last_y"],
 
                     "x":obj["x"],
 
@@ -71,7 +92,7 @@ class handle_new_client(AsyncWebsocketConsumer):
         elif obj["msg_type"]=="3":
 
             # tell the users that exist in a specific group the volunteer stoped his giving 
-
+            self.group_name=0
             await self.channel_layer.group_send(
 
                 f"{obj["trainid"]}",
@@ -95,6 +116,10 @@ class handle_new_client(AsyncWebsocketConsumer):
                 {
 
                 "type":"1",
+
+                "last_x":event["last_x"],
+
+                "last_y":event["last_y"],
 
                 "x":event["x"],
 

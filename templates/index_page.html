@@ -65,9 +65,12 @@
      <button id="stop volunteering" value="3">im now out of the train and i will stop volunteering</button>
 
      <p id="is_there_any_one_give_location_of_this_train"></p>
+     
+      <p id="next_station"></p>
 
     </form>
 
+    
 
 </body>
 
@@ -85,6 +88,11 @@ let current_train_monitor="0"
 let x=0
 let y=0
 
+
+let last_x=0
+
+let last_y=0
+
 // object that will be sended to the server if the current train of the user not equal zero with his location 
 let obj2={}
 
@@ -92,7 +100,16 @@ let obj2={}
 
 
 // only one websocket connection for every client and he will send the location from it if he a volunter and get the location from it if he a normal user monitoring a train
-let websocket_connection=new WebSocket ("ws://127.0.0.1:8000/new_connection/");
+let loc = window.location;
+let wsStart = loc.protocol === "https:" ? "wss://" : "ws://";
+let endpoint = wsStart + loc.host + "/new_connection/";
+
+let websocket_connection = new WebSocket(endpoint);
+
+// let websocket_connection=new WebSocket ("ws://127.0.0.1:8000/new_connection/");
+
+
+
 
 websocket_connection.onerror = function (error) {
     console.error("WebSocket error:", error);
@@ -170,28 +187,61 @@ function error(){
     console.log("")
 }
 
+let gpsReady = false;
+
 function showPosition(position){
- 
     let latitude = position.coords.latitude;
     let longitude = position.coords.longitude;
 
     x = latitude;
     y = longitude;
-      
+
+    gpsReady = true;
+
+    console.log("Received coords:", x, y);
 }
+
+getLocation()
+
+//getting the distance between 2 points using their lat and lon 
+function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // Earth radius in meters
+    const toRad = angle => angle * Math.PI / 180;
+
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+
+    const phi1 = toRad(lat1);
+    const phi2 = toRad(lat2);
+
+    const a = Math.sin(dLat/2) ** 2 +
+              Math.cos(phi1) * Math.cos(phi2) *
+              Math.sin(dLon/2) ** 2;
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+}
+
+
+
 
 
 // update the location of the volunteer every 1 second and send it to the server 
 function update_location(){
     setInterval(() => {
       
-    if (current_train_volunteer!="0"){
-       getLocation()
+    if (current_train_volunteer!="0"&&gpsReady){
+      //  getLocation()
 
 
        obj2["x"]=x 
 
        obj2["y"]=y 
+
+       obj2["last_x"]=last_x
+
+       obj2["last_y"]=last_y
 
        obj2["trainid"]=current_train_volunteer
 
@@ -201,10 +251,13 @@ function update_location(){
        json_data=JSON.stringify(obj2)
 
      websocket_connection.send(json_data)
+
+     last_x=x
+     last_y=y 
 }
       
 
-    }, 1000);
+    }, 10000);
 }
 
 update_location()
@@ -219,7 +272,7 @@ websocket_connection.onmessage=function(data){
 
     if (obj["type"]==="1"){
 
-        // type  one ---> someone sending a update to the location
+    // type  one ---> someone sending a update to the location
 
     document.getElementById("is_there_any_one_give_location_of_this_train").textContent=`a good guy now give location of ${current_train_monitor} train :)`
 
@@ -231,6 +284,22 @@ websocket_connection.onmessage=function(data){
 
     let latitude = obj["x"];
     let longitude = obj["y"];
+
+
+    let last_lat=obj["last_x"]
+
+    let last_lon=obj["last_y"]
+
+
+    let difference_with_meters=haversine(latitude,longitude,last_lat,last_lon)
+
+
+  
+
+       console.log(`the difference is ${difference_with_meters}`)
+    
+
+   
 
     updateLocation(latitude, longitude);
 
@@ -303,7 +372,7 @@ map.fitBounds(group.getBounds());
 
     marker.setLatLng([latitude, longitude]);
     map.panTo([latitude, longitude]);
-    console.log("Sending coords:", latitude, longitude)
+    // console.log("Sending coords:", latitude, longitude)
   }
 
 

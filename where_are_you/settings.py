@@ -129,15 +129,16 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-import os
 
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [
-                f"redis://:{os.environ.get('REDISPASSWORD')}@{os.environ.get('REDISHOST')}:{os.environ.get('REDISPORT', 6379)}"
-            ],
+            "hosts": [{
+                "address": ("redis-production-b095.up.railway.app", 6379),
+                "password": "MMPlNYjOfqgVlTnwIlTEsIRnnVHbjLdh",  # <-- replace this
+                "db": 0,
+            }],
         },
     },
 }

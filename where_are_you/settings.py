@@ -135,14 +135,10 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [{
-                "address": (
-                    os.environ.get("REDISHOST", "localhost"),  # fallback for local dev
-                    int(os.environ.get("REDISPORT", 6379))
-                ),
-                "password": os.environ.get("REDISPASSWORD", None),
-                "db": 0,
-            }],
+            "hosts": [
+                f"redis://:{os.environ.get('REDISPASSWORD')}@{os.environ.get('REDISHOST')}:{os.environ.get('REDISPORT', 6379)}"
+            ],
         },
     },
 }
+

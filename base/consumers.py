@@ -92,7 +92,7 @@ class handle_new_client(AsyncWebsocketConsumer):
         elif obj["msg_type"]=="3":
 
             # tell the users that exist in a specific group the volunteer stoped his giving 
-            self.group_name=0
+            self.group_name=""
             await self.channel_layer.group_send(
 
                 f"{obj['trainid']}",

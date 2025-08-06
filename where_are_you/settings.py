@@ -134,11 +134,9 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [{
-                "address": ("redis-production-b095.up.railway.app", 6379),
-                "password": "MMPlNYjOfqgVlTnwIlTEsIRnnVHbjLdh",  # <-- replace this
-                "db": 0,
-            }],
+            "hosts": [
+                "redis://:MMPlNYjOfqgVlTnwIlTEsIRnnVHbjLdh@redis-production-b095.up.railway.app:6379/0"
+            ],
         },
     },
 }

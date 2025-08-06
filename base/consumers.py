@@ -24,24 +24,21 @@ class handle_new_client(AsyncWebsocketConsumer):
 
         await self.accept()
     
-    async def disconnect(self,close_code):
-
+    async def disconnect(self, close_code):
         print("disconnect")
-
-        if self.group_name!=0:
-
+    
+        if self.group_name:
             await self.channel_layer.group_send(
+            self.group_name,
+            {
+                "type": "unregister_volunteer"
+            }
+        )
+            await self.channel_layer.group_discard(
+            self.group_name,
+            self.channel_name
+        )
 
-                self.group_name,
-
-                {
-
-                "type":"unregister_volunteer"
-
-
-
-                }
-            )   
 
              
     

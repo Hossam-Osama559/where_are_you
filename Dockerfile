@@ -7,4 +7,4 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 COPY . .
 EXPOSE 9000
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "where_are_you.asgi:application"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "9000", "where_are_you.asgi:application"]

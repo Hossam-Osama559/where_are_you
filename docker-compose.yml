@@ -1,16 +1,56 @@
+version: "3.9"
+
 services:
   redis:
     image: redis:7
     container_name: redis
 
-  web:
+  web1:
     build: .
-    container_name: django_web
+    container_name: daphne1
     command: daphne -b 0.0.0.0 -p 9000 where_are_you.asgi:application
     volumes:
       - .:/app
-    ports:
-      - "9000:9000"
     depends_on:
       - redis
-    
+
+  web2:
+    build: .
+    container_name: daphne2
+    command: daphne -b 0.0.0.0 -p 9000 where_are_you.asgi:application
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+
+  web3:
+    build: .
+    container_name: daphne3
+    command: daphne -b 0.0.0.0 -p 9000 where_are_you.asgi:application
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+
+  web4:
+    build: .
+    container_name: daphne4
+    command: daphne -b 0.0.0.0 -p 9000 where_are_you.asgi:application
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - web1
+      - web2
+      - web3
+      - web4
+
